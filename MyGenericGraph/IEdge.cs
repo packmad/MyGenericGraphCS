@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace MyGenericGraph
 {
-    interface IEdge<S, D>
+    public interface IEdge<V>
     {
-
+        V GetSource();
+        V GetDestination();
     }
 }
