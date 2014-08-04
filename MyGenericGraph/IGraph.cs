@@ -1,37 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MyGenericGraph
 {
-    public interface IGraph<V, E> where E : IEdge<V>
+    public enum Color
+    {
+        White,
+        Gray,
+        Black
+    }
+
+
+    public interface IGraph<V, E, W>
+        where E : IEdge<V, W> 
+        where W : IComparable<W>
     {
         void Add(V vertex);
         void Add(E edge);
-        ICollection<V> BreadthFirstVisit(V source);
-        ICollection<V> DepthFirstVisit(V source);
+        IEnumerator<V> BreadthFirstVisit(V source);
+        IEnumerator<V> DepthFirstVisit(V source);
         ICollection<V> Dijkstra(V source);
-        
         int GetOutDegree(V vertex);
         int GetInDegree(V vertex);
         ICollection<V> GetNeighbors(V vertex);
         ICollection<E> GetEdges(V vertex);
-        E GetEdge(V src, V dst);
+        ICollection<E> GetEdges(V src, V dst);
     }
 
-    public abstract class AGraph<V, E> : IGraph<V, E> where E : IEdge<V>
+
+    public abstract class AGraph<V, E, W>
+        where E : IEdge<V, W>
+        where W : IComparable<W>
     {
         private readonly ICollection<V> _vertexes;
         private readonly ICollection<E> _edges;
 
-        public AGraph(ICollection<V> vertexes, ICollection<E> edges) //protected abstract?
+        public AGraph(ICollection<V> vertexes, ICollection<E> edges)
         {
-            this._vertexes = vertexes;
-            this._edges = edges;
+            _vertexes = vertexes;
+            _edges = edges;
         }
 
         public void Add(V vertex)
@@ -44,57 +52,116 @@ namespace MyGenericGraph
             _edges.Add(edge);
         }
 
-        public ICollection<V> BreadthFirstVisit(V source)
+        public IEnumerator<V> BreadthFirstVisit(V source)
         {
-            throw new NotImplementedException();
+            Dictionary<V, Color> color = new Dictionary<V, Color>();
+            Queue<V> queue = new Queue<V>();
+
+            foreach (var v in _vertexes)
+            {
+                color[v] = Color.White;
+            }
+		    color[source] = Color.Gray;
+    		queue.Enqueue(source);
+		
+		    while (queue.Count != 0)
+		    {
+		        V tmp = queue.Dequeue();
+			    foreach (var n in GetNeighbors(tmp)) {
+				    if (color[n] == Color.White) {
+					    color[n] = Color.Gray;
+					    queue.Enqueue(n);
+				    }
+			    }
+                color[tmp] = Color.Black;
+		        yield return tmp;
+		    }
         }
 
-        public ICollection<V> DepthFirstVisit(V source)
+        public IEnumerator<V> DepthFirstVisit(V source)
         {
-            throw new NotImplementedException();
+            Dictionary<V, Color> color = new Dictionary<V, Color>();
+            Stack<V> stack = new Stack<V>();
+
+            foreach (var v in _vertexes)
+            {
+                color[v] = Color.White;
+            }
+		    color[source] = Color.Black;
+            stack.Push(source);
+            while (stack.Count != 0)
+            {
+                V tmp = stack.Pop();
+                if (color[tmp] == Color.White)
+                {
+                    color[tmp] = Color.Black;
+                    yield return tmp;
+                    foreach (var n in GetNeighbors(tmp))
+                    {
+                        stack.Push(n);
+                    }
+                }
+            }
         }
+
 
         public ICollection<V> Dijkstra(V source)
         {
-            throw new NotImplementedException();
+            Dictionary<V, uint> distance = new Dictionary<V, uint>();
+            distance[source] = 0;
+            foreach (var v in _vertexes)
+            {
+                if (!v.Equals(source))
+                    distance[v] = uint.MaxValue;
+
+            }
+            
+
         }
 
-        public E GetEdge(V src, V dst)
-        {
-            foreach (var e in _edges)
-            {
-                if (e.GetSource().Equals(src) && e.GetDestination().Equals(dst))
-                    return e;
-            }
-            throw new NotImplementedException(); // null?
-        }
+
 
         public int GetOutDegree(V vertex)
         {
-            return GetNeighbors(vertex).Count; //problema dupicati
+            return _edges.Count(e => e.GetSource().Equals(vertex));
         }
 
         public int GetInDegree(V vertex)
         {
-            throw new NotImplementedException();
+            return _edges.Count(e => e.GetDestination().Equals(vertex));
         }
 
         public ICollection<V> GetNeighbors(V vertex)
         {
-            ICollection<V> neighbors = new Collection<V>(); //senza dupicati?
-            foreach (var e in _edges)
+            HashSet<V> neighbors = new HashSet<V>();
+            foreach (var e in _edges.Where(e => e.GetSource().Equals(vertex)))
             {
-                if (e.GetSource().Equals(vertex))
-                    neighbors.Add(e.GetDestination());
+                neighbors.Add(e.GetDestination());
             }
             return neighbors;
         }
 
         public ICollection<E> GetEdges(V vertex)
         {
-            throw new NotImplementedException();
+            HashSet<E> edges = new HashSet<E>();
+
+            foreach (var e in _edges.Where(e => e.GetSource().Equals(vertex)))
+            {
+                edges.Add(e);
+            }
+            return edges;
         }
 
+        public ICollection<E> GetEdges(V src, V dst)
+        {
+            HashSet<E> edges = new HashSet<E>();
+
+            foreach (var e in _edges.Where(e => e.GetSource().Equals(src) && e.GetDestination().Equals(dst)))
+            {
+                edges.Add(e);
+            }
+            return edges;
+        }
 
     }
 }

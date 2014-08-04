@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MyGenericGraph
 {
-    class Edge : IEdge<ValueType>
+    class Edge : AEdge<ValueType, int>
     {
         
     }

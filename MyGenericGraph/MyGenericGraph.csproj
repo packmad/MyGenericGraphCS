@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="IGraph.cs" />
     <Compile Include="IEdge.cs" />
+    <Compile Include="PriorityQueue.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -5,8 +5,6 @@ VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyGenericGraph", "MyGenericGraph\MyGenericGraph.csproj", "{91283BBC-2FD9-4304-B4C4-E53282CB4B49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyGenericGraphTests", "MyGenericGraphTests\MyGenericGraphTests.csproj", "{5F83D696-6AF3-4591-8454-0DB3D54B4D8C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{91283BBC-2FD9-4304-B4C4-E53282CB4B49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91283BBC-2FD9-4304-B4C4-E53282CB4B49}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91283BBC-2FD9-4304-B4C4-E53282CB4B49}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5F83D696-6AF3-4591-8454-0DB3D54B4D8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5F83D696-6AF3-4591-8454-0DB3D54B4D8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5F83D696-6AF3-4591-8454-0DB3D54B4D8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5F83D696-6AF3-4591-8454-0DB3D54B4D8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
