@@ -1,97 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MyGenericGraph
 {
-    public class PriorityQueue<T> where T : IComparable<T>
+
+    public class PriorityQueue<TP, TV>
     {
-        private readonly List<T> _data;
-
-        public PriorityQueue()
+        private readonly SortedDictionary<TP, Queue<TV>> _priorityQueue = new SortedDictionary<TP, Queue<TV>>();
+        
+        public void Enqueue(TP priority, TV value)
         {
-            _data = new List<T>();
-        }
+            Queue<TV> q;
 
-        public void Enqueue(T item)
-        {
-            _data.Add(item);
-            int ci = _data.Count - 1; // child index; start at end
-            while (ci > 0)
+            if (!_priorityQueue.TryGetValue(priority, out q))
             {
-                int pi = (ci - 1)/2; // parent index
-                if (_data[ci].CompareTo(_data[pi]) >= 0)
-                    break; // child item is larger than (or equal) parent so we're done
-                T tmp = _data[ci];
-                _data[ci] = _data[pi];
-                _data[pi] = tmp;
-                ci = pi;
+                q = new Queue<TV>();
+                _priorityQueue.Add(priority, q);
             }
+            q.Enqueue(value);
         }
 
-        public T Dequeue()
-        {
-            // assumes pq is not empty; up to calling code
-            int li = _data.Count - 1; // last index (before removal)
-            T frontItem = _data[0]; // fetch the front
-            _data[0] = _data[li];
-            _data.RemoveAt(li);
 
-            --li; // last index (after removal)
-            int pi = 0; // parent index. start at front of pq
-            while (true)
+        public TV Dequeue()
+        {
+            if (IsEmpty)
+                throw new ArgumentOutOfRangeException(GetType() + ": priority queue is empty");
+            var pair = _priorityQueue.First(); // 
+            var v = pair.Value.Dequeue();
+            if (pair.Value.Count == 0) // nothing left of the top priority.
+                _priorityQueue.Remove(pair.Key);
+            return v;
+        }
+
+
+        public void SafeChangePriority(TP oldPriority, TP newPriority, TV value)
+        {
+            if (_priorityQueue.ContainsKey(oldPriority) && _priorityQueue[oldPriority].Contains(value))
             {
-                int ci = pi*2 + 1; // left child index of parent
-                if (ci > li) break; // no children so done
-                int rc = ci + 1; // right child
-                if (rc <= li && _data[rc].CompareTo(_data[ci]) < 0)
-                    // if there is a rc (ci + 1), and it is smaller than left child, use the rc instead
-                    ci = rc;
-                if (_data[pi].CompareTo(_data[ci]) <= 0)
-                    break; // parent is smaller than (or equal to) smallest child so done
-                T tmp = _data[pi];
-                _data[pi] = _data[ci];
-                _data[ci] = tmp; // swap parent and child
-                pi = ci;
+                var valuesArray = _priorityQueue[oldPriority].ToArray();
+                _priorityQueue.Remove(oldPriority);
+                foreach (TV v in valuesArray)
+                {
+                    if (!v.Equals(value))
+                        Enqueue(oldPriority, v);
+                }
             }
-            return frontItem;
+            Enqueue(newPriority, value);
         }
 
-        public T Peek()
+
+        public bool IsEmpty
         {
-            T frontItem = _data[0];
-            return frontItem;
+            get { return !_priorityQueue.Any(); }
         }
-
-        public int Count()
-        {
-            return _data.Count;
-        }
-
-        public override string ToString()
-        {
-            string s = "";
-            for (int i = 0; i < _data.Count; ++i)
-                s += _data[i] + " ";
-            s += "count = " + _data.Count;
-            return s;
-        }
-
-        public bool IsConsistent()
-        {
-            // is the heap property true for all _data?
-            if (_data.Count == 0) return true;
-            int li = _data.Count - 1; // last index
-            for (int pi = 0; pi < _data.Count; ++pi) // each parent index
-            {
-                int lci = 2*pi + 1; // left child index
-                int rci = 2*pi + 2; // right child index
-
-                if (lci <= li && _data[pi].CompareTo(_data[lci]) > 0)
-                    return false; // if lc exists and it's greater than parent then bad.
-                if (rci <= li && _data[pi].CompareTo(_data[rci]) > 0) return false; // check the right child too.
-            }
-            return true; // passed all checks
-        } // IsConsistent
-    } // PriorityQueue
-} // ns
+    }
 }

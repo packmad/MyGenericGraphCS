@@ -42,6 +42,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AEdge.cs" />
+    <Compile Include="AGraph.cs" />
+    <Compile Include="Color.cs" />
     <Compile Include="IGraph.cs" />
     <Compile Include="IEdge.cs" />
     <Compile Include="PriorityQueue.cs" />

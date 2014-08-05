@@ -6,13 +6,10 @@ using System.Threading.Tasks;
 
 namespace MyGenericGraph
 {
-
-    class Program
+    public enum Color
     {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("");
-            Console.ReadLine();
-        }
+        White,
+        Gray,
+        Black
     }
 }
