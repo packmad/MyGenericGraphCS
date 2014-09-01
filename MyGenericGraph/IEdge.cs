@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace MyGenericGraph
 {
-    public interface IEdge<V, W> where W : IComparable<W>
+    public interface IEdge<V>
     {
-        V GetSource();
-        V GetDestination();
-        W GetWeight();
-        uint GetDijWeight();
+        V Source { get; }
+        V Destination { get; }
+        int Weight { get; }
     }
 }

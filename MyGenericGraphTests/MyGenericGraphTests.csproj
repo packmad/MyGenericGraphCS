@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5F83D696-6AF3-4591-8454-0DB3D54B4D8C}</ProjectGuid>
+    <ProjectGuid>{9E1EC189-44F2-44A5-BED6-C6085892D69C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MyGenericGraphTests</RootNamespace>

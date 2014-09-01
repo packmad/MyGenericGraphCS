@@ -1,40 +1,114 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MyGenericGraph
 {
-    public abstract class AGraph<V, E, W>
-        where E : IEdge<V, W>
-        where W : IComparable<W>
+    public interface IGraphCollectionBuilder<V, E> where E : IEdge<V>
     {
-        private readonly ICollection<V> _vertexes;
-        private readonly ICollection<E> _edges;
+        IDictionary<V, ICollection<E>> GetDictionary();
+        ICollection<E> GetNewEdgeSequence();
+    }
 
-        public AGraph(ICollection<V> vertexes, ICollection<E> edges)
+
+    public abstract class AGraph<V, E> : IGraph<V, E> 
+        where E : IEdge<V>
+    {
+        private readonly IGraphCollectionBuilder<V, E> _collectionBuilder;
+
+        public ReadOnlyCollection<V> Vertexes
         {
-            _vertexes = vertexes;
-            _edges = edges;
+            get { return new ReadOnlyCollection<V>(_vertexToNeighbors.Keys.ToList()); }
         }
+
+        public ReadOnlyCollection<E> Edges
+        {
+            get
+            {
+                var llEdges = _vertexToNeighbors.Values;
+                var retList = new List<E>();
+                foreach (var llEdge in llEdges)
+                {
+                    retList.AddRange(llEdge);
+                }
+                return new ReadOnlyCollection<E>(retList);
+            }
+        }
+        private readonly IDictionary<V, ICollection<E>> _vertexToNeighbors;
+        //private readonly ICollection<E> _edges;
+
+        protected AGraph(IGraphCollectionBuilder<V, E> collectionBuilder)
+        {
+            if (collectionBuilder == null)
+                throw new ArgumentNullException();
+            _collectionBuilder = collectionBuilder;
+            _vertexToNeighbors = _collectionBuilder.GetDictionary();
+            //_edges = _collectionBuilder.GetNewEdgeSequence();
+        }
+
+        private void AddSrcDst(E edge)
+        {
+            if (Equals(edge, default(E)))
+                throw new ArgumentNullException();
+            if (!_vertexToNeighbors.Keys.Contains(edge.Source))
+                Add(edge.Source);
+            if (!_vertexToNeighbors.Keys.Contains(edge.Destination))
+                Add(edge.Destination);
+        }
+
 
         public void Add(V vertex)
         {
-            _vertexes.Add(vertex);
+            if (Equals(vertex, default(V)))
+                throw new ArgumentNullException();
+            if (!_vertexToNeighbors.Keys.Contains(vertex))
+                _vertexToNeighbors.Add(vertex, _collectionBuilder.GetNewEdgeSequence());
         }
 
         public void Add(E edge)
         {
-            _edges.Add(edge);
+            if (Equals(edge, default(E)))
+                throw new ArgumentNullException();
+            if (!Contains(edge)) // no duplicates
+            {
+                AddSrcDst(edge);
+                _vertexToNeighbors[edge.Source].Add(edge); //src -> neighbors
+            }
         }
 
-        public IEnumerator<V> BreadthFirstVisit(V source)
+        public bool Remove(V vertex)
         {
+
+            return _vertexToNeighbors.Remove(vertex);
+        }
+
+        public bool Remove(E edge)
+        {
+            return _vertexToNeighbors[edge.Source].Remove(edge);
+        }
+
+        public bool Contains(V vertex)
+        {
+            return _vertexToNeighbors.ContainsKey(vertex);
+        }
+
+        public bool Contains(E edge)
+        {
+            return Edges.Contains(edge);
+        }
+
+
+        public IEnumerable<V> BreadthFirstVisit(V source)
+        {
+            if (Equals(source, default(V)))
+                throw new ArgumentNullException();
+
             Dictionary<V, Color> color = new Dictionary<V, Color>();
             Queue<V> queue = new Queue<V>();
 
-            foreach (var v in _vertexes)
+            foreach (var v in Vertexes)
             {
                 color[v] = Color.White;
             }
@@ -57,16 +131,19 @@ namespace MyGenericGraph
             }
         }
 
-        public IEnumerator<V> DepthFirstVisit(V source)
+        public IEnumerable<V> DepthFirstVisit(V source)
         {
+            if (Equals(source, default(V)))
+                throw new ArgumentNullException();
+
             Dictionary<V, Color> color = new Dictionary<V, Color>();
             Stack<V> stack = new Stack<V>();
 
-            foreach (var v in _vertexes)
+            foreach (var v in Vertexes)
             {
                 color[v] = Color.White;
             }
-            color[source] = Color.Black;
+            //color[source] = Color.Black;
             stack.Push(source);
             while (stack.Count != 0)
             {
@@ -74,7 +151,7 @@ namespace MyGenericGraph
                 if (color[tmp] == Color.White)
                 {
                     color[tmp] = Color.Black;
-                    yield return tmp;
+                    yield return tmp; // modifica???
                     foreach (var n in GetNeighbors(tmp))
                     {
                         stack.Push(n);
@@ -84,86 +161,67 @@ namespace MyGenericGraph
         }
 
 
-        public ICollection<E> Dijkstra(V source)
+        private void CheckNullBelong(V vertex)
         {
-            Dictionary<V, uint> distance = new Dictionary<V, uint>();
-            Dictionary<V, E> nextEdge = new Dictionary<V, E>();
-            Func<V, V, int> compare = (x, y) => distance[x] > distance[y] ? -1 : 1;
-            PriorityQueue<uint, V> pq = new PriorityQueue<uint, V>(); // <W,V>
-            List<E> path = new List<E>();
-
-            distance[source] = 0;
-            foreach (var v in _vertexes)
-            {
-                if (!v.Equals(source))
-                    distance[v] = uint.MaxValue;
-                pq.Enqueue(distance[v], v);
-            }
-
-            while (!pq.IsEmpty)
-            {
-                V tmp = pq.Dequeue();
-                if (distance[tmp] == uint.MaxValue)
-                    break;
-                foreach (var v in GetNeighbors(tmp))
-                {
-                    foreach (var e in GetEdges(tmp, v))
-                    {
-                        uint alt = distance[tmp] + e.GetDijWeight();
-                        if (alt < distance[v])
-                        {
-                            pq.SafeChangePriority(distance[v], alt, v);
-                            distance[v] = alt;
-                            nextEdge[tmp] = e;
-                        }
-                    }
-                }
-            }
-            return nextEdge.Values;
+            if (Equals(vertex, default(V)))
+                throw new ArgumentNullException();
+            if (!Contains(vertex))
+                throw new Exception("The vertex does not belong to the graph"); //TODO
         }
-
 
         public int GetOutDegree(V vertex)
         {
-            return _edges.Count(e => e.GetSource().Equals(vertex));
+            CheckNullBelong(vertex);
+            return _vertexToNeighbors[vertex].Count;
         }
 
         public int GetInDegree(V vertex)
         {
-            return _edges.Count(e => e.GetDestination().Equals(vertex));
+            CheckNullBelong(vertex);
+            return Edges.Count(e => e.Destination.Equals(vertex));
         }
 
-        public ICollection<V> GetNeighbors(V vertex)
+        public ReadOnlyCollection<V> GetNeighbors(V vertex)
         {
+            CheckNullBelong(vertex);
             HashSet<V> neighbors = new HashSet<V>();
-            foreach (var e in _edges.Where(e => e.GetSource().Equals(vertex)))
+            foreach (var e in _vertexToNeighbors[vertex])
             {
-                neighbors.Add(e.GetDestination());
+                neighbors.Add(e.Destination);
             }
-            return neighbors;
+            return new ReadOnlyCollection<V>(neighbors.ToList());
         }
 
-        public ICollection<E> GetEdges(V vertex)
+        public ReadOnlyCollection<E> GetEdges(V vertex)
         {
-            HashSet<E> edges = new HashSet<E>();
-
-            foreach (var e in _edges.Where(e => e.GetSource().Equals(vertex)))
-            {
-                edges.Add(e);
-            }
-            return edges;
+            CheckNullBelong(vertex);
+            return new ReadOnlyCollection<E>(_vertexToNeighbors[vertex].ToList());
         }
 
-        public ICollection<E> GetEdges(V src, V dst)
+        public ReadOnlyCollection<E> GetEdges(V src, V dst)
         {
-            HashSet<E> edges = new HashSet<E>();
-
-            foreach (var e in _edges.Where(e => e.GetSource().Equals(src) && e.GetDestination().Equals(dst)))
+            CheckNullBelong(src);
+            CheckNullBelong(dst);
+            HashSet<E> retEdges = new HashSet<E>();
+            foreach (var e in _vertexToNeighbors[src].Where(e => e.Destination.Equals(dst)))
             {
-                edges.Add(e);
+                retEdges.Add(e);
             }
-            return edges;
+            return new ReadOnlyCollection<E>(retEdges.ToList());
         }
 
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var v in Vertexes)
+            {
+                sb.Append(v + "\n");
+            }
+            foreach (var e in Edges)
+            {
+                sb.Append(e + "\n");
+            }
+            return sb.ToString();
+        }
     }
 }
