@@ -83,29 +83,39 @@ namespace MyGenericGraphTests
         private static readonly Town T2 = new Town("T2");
         private static readonly Town T3 = new Town("T3");
         
-        private static readonly City start = new City("START");
-        private static readonly Town a = new Town("A");
-        private static readonly Town b = new Town("B");
-        private static readonly Town c = new Town("C");
-        private static readonly Town d = new Town("D");
-        private static readonly Town e = new Town("E");
-        private static readonly Town f = new Town("F");
-        private static readonly City end = new City("END");
+        private static readonly City Start = new City("START");
+        private static readonly Town A = new Town("A");
+        private static readonly Town B = new Town("B");
+        private static readonly Town C = new Town("C");
+        private static readonly Town D = new Town("D");
+        private static readonly Town E = new Town("E");
+        private static readonly City End = new City("END");
+
+        private static readonly Edge Edge1 = new Edge(Start, A, 2);
+        private static readonly Edge Edge2 = new Edge(Start, D, 8);
+        private static readonly Edge Edge3 = new Edge(A, B, 6);
+        private static readonly Edge Edge4 = new Edge(A, C, 2);
+        private static readonly Edge Edge5 = new Edge(C, D, 2);
+        private static readonly Edge Edge6 = new Edge(D, E, 3);
+        private static readonly Edge Edge7 = new Edge(C, E, 9);
+        private static readonly Edge Edge8 = new Edge(E, End, 1);
+        private static readonly Edge Edge9 = new Edge(B, End, 5);
+        
 
         [TestInitialize()]
         public void Initialize()
         {
             var edges4Add = new List<Edge>
             {
-                new Edge(start, a, 2),
-                new Edge(start, d, 8),
-                new Edge(a, b, 6),
-                new Edge(a, c, 2),
-                new Edge(c, d, 2),
-                new Edge(d, e, 3),
-                new Edge(c, e, 9),
-                new Edge(e, end, 1),
-                new Edge(b, end, 5),
+                Edge1,
+                Edge2,
+                Edge3,
+                Edge4,
+                Edge5,
+                Edge6,
+                Edge7,
+                Edge8,
+                Edge9,
             };
             _graph = new Graph(new GraphCollectionBuilder());
             foreach (var edge in edges4Add)
@@ -177,13 +187,13 @@ namespace MyGenericGraphTests
         public void BreadthFirstVisitTest()
         {
             var deeper = new City("deeper");
-            _graph.Add(new Edge(end, deeper, 3));
+            _graph.Add(new Edge(End, deeper, 3));
             List<Place> ans = new List<Place>
             {
-                start, a, d, b, c, e, end, deeper
+                Start, A, D, B, C, E, End, deeper
             };
 
-            IList<Place> visit = _graph.BreadthFirstVisit(start).ToList();
+            IList<Place> visit = _graph.BreadthFirstVisit(Start).ToList();
             PrintCollectionToConsole(visit);
             Assert.IsTrue(visit.SequenceEqual(ans));
         }
@@ -192,13 +202,13 @@ namespace MyGenericGraphTests
         public void DepthFirstVisitTest()
         {
             var deeper = new City("deeper");
-            _graph.Add(new Edge(end, deeper, 3));
+            _graph.Add(new Edge(End, deeper, 3));
             List<Place> ans = new List<Place>
             {
-                start, d, e, end, deeper, a, c, b
+                Start, D, E, End, deeper, A, C, B
             };
 
-            IList<Place> visit = _graph.DepthFirstVisit(start).ToList();
+            IList<Place> visit = _graph.DepthFirstVisit(Start).ToList();
             PrintCollectionToConsole(visit);
             Assert.IsTrue(visit.SequenceEqual(ans));
         }
@@ -283,18 +293,28 @@ namespace MyGenericGraphTests
         [TestMethod()]
         public void DijkstraAlgorithmTest()
         {
-            DijkstraAlgorithm<Place, Edge> dijkstraAlgorithm = new DijkstraAlgorithm<Place, Edge>(_graph, start);
+            List<Edge> ansPaths;
+            IReadOnlyCollection<Edge> paths;
+            DijkstraAlgorithm<Place, Edge> dijkstraAlgorithm = new DijkstraAlgorithm<Place, Edge>(_graph, Start);
             Assert.IsNotNull(dijkstraAlgorithm);
-            foreach (var edge in dijkstraAlgorithm.Paths)
+
+            paths = dijkstraAlgorithm.Paths;
+            ansPaths = new List<Edge> { Edge1, Edge5, Edge3, Edge4, Edge6, Edge8 };
+            foreach (var edge in paths)
             {
                 Console.WriteLine(edge);
             }
+            Assert.IsTrue(paths.SequenceEqual(ansPaths));
+
             Console.WriteLine("\n\n");
-            foreach (var edge in dijkstraAlgorithm.GetPathToDestination(end))
+
+            paths = dijkstraAlgorithm.GetPathToDestination(End);
+            ansPaths = new List<Edge> { Edge1, Edge4, Edge5, Edge6, Edge8 };
+            foreach (var edge in paths)
             {
                 Console.WriteLine(edge);
             }
-            Assert.Fail();
+            Assert.IsTrue(paths.SequenceEqual(ansPaths));
         }
     }
 }

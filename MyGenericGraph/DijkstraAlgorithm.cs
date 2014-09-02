@@ -84,7 +84,6 @@ namespace MyGenericGraph
             }
             List<E> p = _nextEdge.Values.ToList();
             int r = p.RemoveAll(e => Equals(e, default(E)) );
-            Console.WriteLine(r);
             Paths = new ReadOnlyCollection<E>(p);
         }
 
