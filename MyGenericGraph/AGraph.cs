@@ -6,17 +6,24 @@ using System.Text;
 
 namespace MyGenericGraph
 {
-    public interface IGraphCollectionBuilder<V, E> where E : IEdge<V>
+    public interface IGraphDataStructureFactory<V, E> where E : IEdge<V>
     {
         IDictionary<V, ICollection<E>> GetDictionary();
-        ICollection<E> GetNewEdgeSequence();
+        ICollection<E> GetEdgeCollection();
     }
 
 
-    public abstract class AGraph<V, E> : IGraph<V, E> 
-        where E : IEdge<V>
+    public abstract class AGraph<V, E> : IGraph<V, E> where E : IEdge<V>
     {
-        private readonly IGraphCollectionBuilder<V, E> _collectionBuilder;
+        private readonly IGraphDataStructureFactory<V, E> _dataStructureFactory;
+        private readonly IDictionary<V, ICollection<E>> _vertexToNeighbors;
+
+        private object _footprint;
+        private void CheckAccess(object localFootprint)
+        {
+            if (_footprint != localFootprint)
+                throw new InvalidOperationException();
+        }
 
         public ReadOnlyCollection<V> Vertexes
         {
@@ -27,25 +34,28 @@ namespace MyGenericGraph
         {
             get
             {
-                var llEdges = _vertexToNeighbors.Values;
-                var retList = new List<E>();
-                foreach (var llEdge in llEdges)
+                var allEdges = _vertexToNeighbors.Values;
+                var returnList = new List<E>();
+                foreach (var llEdge in allEdges)
                 {
-                    retList.AddRange(llEdge);
+                    returnList.AddRange(llEdge);
                 }
-                return new ReadOnlyCollection<E>(retList);
+                return new ReadOnlyCollection<E>(returnList);
             }
         }
-        private readonly IDictionary<V, ICollection<E>> _vertexToNeighbors;
-        //private readonly ICollection<E> _edges;
 
-        protected AGraph(IGraphCollectionBuilder<V, E> collectionBuilder)
+        protected AGraph(IGraphDataStructureFactory<V, E> dataStructureFactory)
         {
-            if (collectionBuilder == null)
+            if (dataStructureFactory == null)
                 throw new ArgumentNullException();
-            _collectionBuilder = collectionBuilder;
-            _vertexToNeighbors = _collectionBuilder.GetDictionary();
-            //_edges = _collectionBuilder.GetNewEdgeSequence();
+            _dataStructureFactory = dataStructureFactory; // for getting new edges collection
+            _vertexToNeighbors = _dataStructureFactory.GetDictionary();
+        }
+
+
+        private bool VertexIsNull(V vertex)
+        {
+            return EqualityComparer<V>.Default.Equals(vertex, default(V));
         }
 
         private void AddSrcDst(E edge)
@@ -61,10 +71,13 @@ namespace MyGenericGraph
 
         public void Add(V vertex)
         {
-            if (Equals(vertex, default(V)))
+            if (VertexIsNull(vertex))
                 throw new ArgumentNullException();
             if (!_vertexToNeighbors.Keys.Contains(vertex))
-                _vertexToNeighbors.Add(vertex, _collectionBuilder.GetNewEdgeSequence());
+            {
+                _footprint = new Object();
+                _vertexToNeighbors.Add(vertex, _dataStructureFactory.GetEdgeCollection());
+            }
         }
 
         public void Add(E edge)
@@ -73,6 +86,7 @@ namespace MyGenericGraph
                 throw new ArgumentNullException();
             if (!Contains(edge)) // no duplicates
             {
+                _footprint = new Object();
                 AddSrcDst(edge);
                 _vertexToNeighbors[edge.Source].Add(edge); //src -> neighbors
             }
@@ -80,30 +94,40 @@ namespace MyGenericGraph
 
         public bool Remove(V vertex)
         {
-
+            if (VertexIsNull(vertex))
+                throw new ArgumentNullException();
+            _footprint = new Object();
             return _vertexToNeighbors.Remove(vertex);
         }
 
         public bool Remove(E edge)
         {
+            if (Equals(edge, default(E)))
+                throw new ArgumentNullException();
+            _footprint = new Object();
             return _vertexToNeighbors[edge.Source].Remove(edge);
         }
 
         public bool Contains(V vertex)
         {
+            if (VertexIsNull(vertex))
+                throw new ArgumentNullException();
             return _vertexToNeighbors.ContainsKey(vertex);
         }
 
         public bool Contains(E edge)
         {
+            if (Equals(edge, default(E)))
+                throw new ArgumentNullException();
             return Edges.Contains(edge);
         }
 
 
         public IEnumerable<V> BreadthFirstVisit(V source)
         {
-            if (Equals(source, default(V)))
+            if (VertexIsNull(source))
                 throw new ArgumentNullException();
+            object localFootprint = _footprint;
 
             Dictionary<V, Color> color = new Dictionary<V, Color>();
             Queue<V> queue = new Queue<V>();
@@ -127,14 +151,16 @@ namespace MyGenericGraph
                     }
                 }
                 color[tmp] = Color.Black;
+                CheckAccess(localFootprint);
                 yield return tmp;
             }
         }
 
         public IEnumerable<V> DepthFirstVisit(V source)
         {
-            if (Equals(source, default(V)))
+            if (VertexIsNull(source))
                 throw new ArgumentNullException();
+            object localFootprint = _footprint;
 
             Dictionary<V, Color> color = new Dictionary<V, Color>();
             Stack<V> stack = new Stack<V>();
@@ -143,7 +169,6 @@ namespace MyGenericGraph
             {
                 color[v] = Color.White;
             }
-            //color[source] = Color.Black;
             stack.Push(source);
             while (stack.Count != 0)
             {
@@ -151,7 +176,8 @@ namespace MyGenericGraph
                 if (color[tmp] == Color.White)
                 {
                     color[tmp] = Color.Black;
-                    yield return tmp; // modifica???
+                    CheckAccess(localFootprint);
+                    yield return tmp;
                     foreach (var n in GetNeighbors(tmp))
                     {
                         stack.Push(n);
@@ -163,7 +189,7 @@ namespace MyGenericGraph
 
         private void CheckNullBelong(V vertex)
         {
-            if (Equals(vertex, default(V)))
+            if (VertexIsNull(vertex))
                 throw new ArgumentNullException();
             if (!Contains(vertex))
                 throw new Exception("The vertex does not belong to the graph"); //TODO
@@ -213,13 +239,15 @@ namespace MyGenericGraph
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
+            sb.Append("Vertexes:\n");
             foreach (var v in Vertexes)
             {
-                sb.Append(v + "\n");
+                sb.Append("\t" + v + "\n");
             }
+            sb.Append("Edges:\n");
             foreach (var e in Edges)
             {
-                sb.Append(e + "\n");
+                sb.Append("\t" + e + "\n");
             }
             return sb.ToString();
         }

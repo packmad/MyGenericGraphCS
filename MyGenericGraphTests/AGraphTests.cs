@@ -52,14 +52,14 @@ namespace MyGenericGraphTests
             }
         }
 
-        private class GraphCollectionBuilder : IGraphCollectionBuilder<Place, Edge>
+        private class GraphDataStructureFactory : IGraphDataStructureFactory<Place, Edge>
         {
             public IDictionary<Place, ICollection<Edge>> GetDictionary()
             {
                 return new Dictionary<Place, ICollection<Edge>>();
             }
 
-            public ICollection<Edge> GetNewEdgeSequence()
+            public ICollection<Edge> GetEdgeCollection()
             {
                 return new List<Edge>();
             }
@@ -67,7 +67,7 @@ namespace MyGenericGraphTests
 
         private class Graph : AGraph<Place, Edge>
         {
-            public Graph(IGraphCollectionBuilder<Place, Edge> collectionBuilder) : base(collectionBuilder)
+            public Graph(IGraphDataStructureFactory<Place, Edge> dataStructureFactory) : base(dataStructureFactory)
             {
             }
         }
@@ -117,7 +117,7 @@ namespace MyGenericGraphTests
                 Edge8,
                 Edge9,
             };
-            _graph = new Graph(new GraphCollectionBuilder());
+            _graph = new Graph(new GraphDataStructureFactory());
             foreach (var edge in edges4Add)
                 _graph.Add(edge);
         }
@@ -199,6 +199,16 @@ namespace MyGenericGraphTests
         }
 
         [TestMethod()]
+        [ExpectedException(typeof(InvalidOperationException),"")]
+        public void BreadthFirstVisitModifyExceptionTest()
+        {
+            var visit = _graph.BreadthFirstVisit(Start).GetEnumerator();
+            visit.MoveNext();
+            _graph.Add(new Town("Exception"));
+            visit.MoveNext();
+        }
+
+        [TestMethod()]
         public void DepthFirstVisitTest()
         {
             var deeper = new City("deeper");
@@ -213,7 +223,15 @@ namespace MyGenericGraphTests
             Assert.IsTrue(visit.SequenceEqual(ans));
         }
 
-
+        [TestMethod()]
+        [ExpectedException(typeof(InvalidOperationException), "")]
+        public void DepthFirstVisitModifyExceptionTest()
+        {
+            var visit = _graph.DepthFirstVisit(Start).GetEnumerator();
+            visit.MoveNext();
+            _graph.Add(new Town("Exception"));
+            visit.MoveNext();
+        }
 
         [TestMethod()]
         public void GetOutDegreeTest()
