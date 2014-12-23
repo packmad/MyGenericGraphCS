@@ -60,7 +60,6 @@ namespace MyGenericGraph
                 _nextEdge[v] = default(E);
                 _priorityQueue.Enqueue(_distance[v], v);
             }
-            //IList<E> path = new List<E>();
 
             while (!_priorityQueue.IsEmpty)
             {

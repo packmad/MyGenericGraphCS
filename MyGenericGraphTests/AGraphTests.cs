@@ -44,7 +44,7 @@ namespace MyGenericGraphTests
             internal Town(string name) : base(name) { }
         }
 
-        internal class Edge : AEdge<Place, int>
+        internal class Edge : AEdge<Place>
         {
             public Edge(Place source, Place destination, int weight) :
                 base(source, destination, weight)

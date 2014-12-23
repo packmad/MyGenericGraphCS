@@ -1,7 +1,7 @@
 ﻿
 namespace MyGenericGraph
 {
-    public abstract class AEdge<V, W> : IEdge<V>
+    public abstract class AEdge<V> : IEdge<V>
     {
         public V Source { get; private set; }
         public V Destination { get; private set; }
