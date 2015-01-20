@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -73,10 +74,10 @@ namespace MyGenericGraph
                         uint alt = _distance[u] + (uint) e.Weight;
                         if (alt < _distance[v])
                         {
+                            Debug.Assert( Equals(_nextEdge[v], default(E)) || (e.Weight < _nextEdge[v].Weight));
                             _priorityQueue.SafeChangePriority(_distance[v], alt, v);
                             _distance[v] = alt;
-                            if (Equals(_nextEdge[v], default(E)) || e.Weight < _nextEdge[v].Weight)
-                                _nextEdge[v] = e;
+                            _nextEdge[v] = e;
                         }
                     }
                 }
