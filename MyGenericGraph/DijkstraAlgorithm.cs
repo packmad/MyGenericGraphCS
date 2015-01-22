@@ -58,7 +58,6 @@ namespace MyGenericGraph
             {
                 if (!v.Equals(_source))
                     _distance[v] = uint.MaxValue;
-                _nextEdge[v] = default(E);
                 _priorityQueue.Enqueue(_distance[v], v);
             }
 
@@ -74,7 +73,8 @@ namespace MyGenericGraph
                         uint alt = _distance[u] + (uint) e.Weight;
                         if (alt < _distance[v])
                         {
-                            Debug.Assert( Equals(_nextEdge[v], default(E)) || (e.Weight < _nextEdge[v].Weight));
+                            if (_nextEdge.ContainsKey(v))
+                                Debug.Assert(e.Weight < _nextEdge[v].Weight);
                             _priorityQueue.SafeChangePriority(_distance[v], alt, v);
                             _distance[v] = alt;
                             _nextEdge[v] = e;
